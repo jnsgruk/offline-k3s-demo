@@ -1,0 +1,18 @@
+---
+- name: Install kubectl
+  become: true
+  copy:
+    src: "{{playbook_dir}}/../files/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Install helm
+  become: true
+  copy:
+    src: "{{ playbook_dir }}/../files/helm"
+    dest: /usr/local/bin/helm
+    mode: 0755
+    owner: root
+    group: root

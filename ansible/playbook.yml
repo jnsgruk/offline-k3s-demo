@@ -1,0 +1,21 @@
+---
+- name: Install Kubernetes tools
+  hosts:
+    - all
+  roles:
+    - tools
+
+- name: Install k3s dependencies
+  hosts: cluster
+  roles:
+    - k3s-deps
+
+- name: Setup k3s master
+  hosts: master
+  roles:
+    - ./roles/k3s-master
+
+- name: Setup k3s nodes
+  hosts: nodes
+  roles:
+    - ./roles/k3s-node

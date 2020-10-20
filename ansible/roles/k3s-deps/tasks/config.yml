@@ -1,0 +1,59 @@
+---
+- name: Set selinux to disabled
+  become: true
+  selinux:
+    state: disabled
+
+- name: Change selinux config for this boot
+  become: true
+  shell: setenforce 0
+
+- name: Enable IPv4 forwarding
+  become: true
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: yes
+
+- name: Enable IPv6 forwarding
+  become: true
+  sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: "1"
+    state: present
+    reload: yes
+
+- name: Add br_netfilter to /etc/modules-load.d/
+  become: true
+  copy:
+    content: "br_netfilter"
+    dest: /etc/modules-load.d/br_netfilter.conf
+    mode: "u=rw,g=,o="
+
+- name: Load br_netfilter
+  become: true
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Set bridge-nf-call-iptables (just to be sure)
+  become: true
+  sysctl:
+    name: "{{ item }}"
+    value: "1"
+    state: present
+    reload: yes
+  loop:
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-ip6tables
+
+- name: Add /usr/local/bin to sudo secure_path
+  become: true
+  lineinfile:
+    line: "Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin"
+    regexp: "Defaults(\\s)*secure_path(\\s)*="
+    state: present
+    insertafter: EOF
+    path: /etc/sudoers
+    validate: "visudo -cf %s"

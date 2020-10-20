@@ -1,0 +1,21 @@
+---
+- name: Install K3s
+  become: yes
+  shell: env INSTALL_K3S_SKIP_DOWNLOAD=true /usr/local/bin/install-k3s.sh
+  args:
+    creates: /usr/local/bin/k3s-uninstall.sh
+
+- name: Wait for node-token
+  become: true
+  wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
+
+- name: Read node-token from master
+  become: true
+  slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  register: node_token
+
+- name: Store Master node-token
+  set_fact:
+    token: "{{ node_token.content | b64decode | regex_replace('\n', '') }}"

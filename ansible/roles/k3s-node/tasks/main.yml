@@ -1,0 +1,8 @@
+---
+- name: Install K3s
+  become: yes
+  shell: |
+    export INSTALL_K3S_SKIP_DOWNLOAD=true 
+    export K3S_URL='https://node-0:6443' 
+    export K3S_TOKEN={{ hostvars[groups['master'][0]]['token'] }} 
+    /usr/local/bin/install-k3s.sh
