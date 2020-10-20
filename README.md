@@ -18,6 +18,7 @@ First, ensure that you have the following tools installed and available in your 
 - [terraform](https://terraform.io)
 - [ansible](https://ansible.com)
 - [azure cli](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [skopeo](https://github.com/containers/skopeo)
 
 In order for the Terraform to deploy, the Azure CLI must be logged in to a valid subscription using `az login`. It is also possible to configure Terraform to authenticate with Azure using environment variables that specify a service principal - but the `az login` method is most simple.
 
@@ -56,7 +57,7 @@ Note that Ansible requires the hosts to be accessible over SSH using public key 
 Once the Ansible playbook has completed, you should be able to SSH into the master node and check that the two agent nodes are registered:
 
 ```bash
-$ ssh node-0
+$ ssh -F <repo_dir>/ssh_config node-0
 $ sudo k3s kubectl get nodes
 NAME     STATUS   ROLES    AGE   VERSION
 node-1   Ready    <none>   86m   v1.18.10+k3s1

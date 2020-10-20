@@ -10,10 +10,16 @@ set -euo pipefail
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # Check if a download destination was specified as an argument
-if [[ -z "${1}" ]]; then
+if [[ -z "${1:-}" ]]; then
   DOWNLOAD_DIR="${SCRIPT_DIR}/files"
 else
   DOWNLOAD_DIR="${1}"
+fi
+
+# Check that Skopeo is installed
+if ! command -v skopeo >/dev/null; then
+  echo >&2 "[!] Skopeo not in \$PATH, exiting."#
+  exit 1
 fi
 
 # Select a CentOS mirror
@@ -44,19 +50,33 @@ RPM_URLS=(
 
 echo "[+] Downloading RPM dependencies..."
 mkdir -p "${DOWNLOAD_DIR}/rpms"
-wget -qP "${DOWNLOAD_DIR}/rpms" "${RPM_URLS[@]}"
+wget -qNP "${DOWNLOAD_DIR}/rpms" "${RPM_URLS[@]}"
 
 echo "[+] Downloading kubectl..."
-wget -qO "${DOWNLOAD_DIR}/kubectl" "https://storage.googleapis.com/kubernetes-release/release/v1.18.10/bin/linux/amd64/kubectl"
+wget -qNO "${DOWNLOAD_DIR}/kubectl" "https://storage.googleapis.com/kubernetes-release/release/v1.18.10/bin/linux/amd64/kubectl"
 
 echo "[+] Downloading helm..."
-wget -qO- "https://get.helm.sh/helm-v3.3.4-linux-amd64.tar.gz" | tar zx --strip-components 1 -C "${DOWNLOAD_DIR}" linux-amd64/helm 
+wget -qNO- "https://get.helm.sh/helm-v3.3.4-linux-amd64.tar.gz" | tar zx --strip-components 1 -C "${DOWNLOAD_DIR}" linux-amd64/helm 
 
 echo "[+] Downloading k3s..."
-wget -qO "${DOWNLOAD_DIR}/k3s" "https://github.com/rancher/k3s/releases/download/v1.18.10%2Bk3s1/k3s"
+wget -qNO "${DOWNLOAD_DIR}/k3s" "https://github.com/rancher/k3s/releases/download/v1.18.10%2Bk3s1/k3s"
 
 echo "[+] Downloading k3s offline images..."
-wget -qO "${DOWNLOAD_DIR}/k3s-airgap-images-amd64.tar" "https://github.com/rancher/k3s/releases/download/v1.18.10%2Bk3s1/k3s-airgap-images-amd64.tar"
+wget -qNO "${DOWNLOAD_DIR}/k3s-airgap-images-amd64.tar" "https://github.com/rancher/k3s/releases/download/v1.18.10%2Bk3s1/k3s-airgap-images-amd64.tar"
 
 echo "[+] Downloading k3s installer..."
-wget -qO "${DOWNLOAD_DIR}/install-k3s.sh" "https://get.k3s.io"
+wget -qNO "${DOWNLOAD_DIR}/install-k3s.sh" "https://get.k3s.io"
+
+echo "[+] Downloading default base container images..."
+if [[ ! -d "${DOWNLOAD_DIR}"/containers ]]; then
+  mkdir -p "${DOWNLOAD_DIR}"/containers
+  skopeo copy -q --additional-tag registry:latest docker://docker.io/library/registry:latest docker-archive:"${DOWNLOAD_DIR}"/containers/registry.tar
+  skopeo copy -q --additional-tag busybox:latest docker://docker.io/library/busybox:latest docker-archive:"${DOWNLOAD_DIR}"/containers/busybox.tar
+  skopeo copy -q --additional-tag alpine:latest docker://docker.io/library/alpine:latest docker-archive:"${DOWNLOAD_DIR}"/containers/alpine.tar
+  skopeo copy -q --additional-tag ubuntu:latest docker://docker.io/library/ubuntu:latest docker-archive:"${DOWNLOAD_DIR}"/containers/ubuntu.tar
+  skopeo copy -q --additional-tag golang:latest docker://docker.io/library/golang:latest docker-archive:"${DOWNLOAD_DIR}"/containers/golang.tar
+  skopeo copy -q --additional-tag nginx:latest docker://docker.io/library/nginx:latest docker-archive:"${DOWNLOAD_DIR}"/containers/nginx.tar
+  skopeo copy -q --additional-tag python:latest docker://docker.io/library/python:latest docker-archive:"${DOWNLOAD_DIR}"/containers/python.tar
+else
+  echo "[+] Container directory already present, skipping download..."
+fi

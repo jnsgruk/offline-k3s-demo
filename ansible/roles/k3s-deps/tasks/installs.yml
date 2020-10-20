@@ -29,7 +29,15 @@
   become: true
   copy:
     src: "{{ playbook_dir }}/../files/k3s-airgap-images-amd64.tar"
-    dest: /var/lib/rancher/k3s/agent/images/k3s-airgap-images-amd64.tar
+    dest: "/var/lib/rancher/k3s/agent/images/k3s-airgap-images-amd64.tar"
+    owner: root
+    group: root
+
+- name: Copy default container images into place
+  become: true
+  copy:
+    src: "{{ playbook_dir }}/../files/containers/"
+    dest: /var/lib/rancher/k3s/agent/images/
     owner: root
     group: root
 

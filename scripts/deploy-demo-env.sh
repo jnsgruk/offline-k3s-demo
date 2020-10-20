@@ -6,10 +6,16 @@ CURRENT_DIR="${PWD}"
 
 if ! command -v terraform >/dev/null; then
   echo >&2 "[!] Terraform not in \$PATH, exiting."
+  exit 1
 elif ! command -v ansible-playbook >/dev/null; then
   echo >&2 "[!] Ansible not in \$PATH, exiting."
+  exit 1
 elif ! command -v az >/dev/null; then
   echo >&2 "[!] Azure CLI not in \$PATH, exiting."
+  exit 1
+elif ! command -v skopeo >/dev/null; then
+  echo >&2 "[!] Skopeo not in \$PATH, exiting."
+  exit 1
 fi
 
 if ! az account show 2>&1 >/dev/null; then
